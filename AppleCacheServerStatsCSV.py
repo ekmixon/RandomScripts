@@ -10,10 +10,7 @@ from datetime import date, timedelta
 
 def sizeConvert(label,size):
     if label == "bytes":
-        if size == "0":
-            return 0
-        else:
-            return (float(size)/1024/1024/1024)
+        return 0 if size == "0" else (float(size)/1024/1024/1024)
     if label == "KB":
         return (float(size)/1024/1024)
     if label == "MB":
@@ -21,25 +18,23 @@ def sizeConvert(label,size):
     if label == "GB":
         return float(size)
     
-outputfile = open("/Users/Shared/output.csv", "a")
+with open("/Users/Shared/output.csv", "a") as outputfile:
+    command = "log show  --predicate \'subsystem == \"com.apple.AssetCache\"\' --debug --info --start \"$(date -v -1d \"+%Y-%m-%d\")\" --end \"$(date \"+%Y-%m-%d\")\" | grep \"Served all\""
+    cacheoutput = subprocess.check_output(command, shell=True)
+    rawLog = StringIO.StringIO(cacheoutput)
 
-command = "log show  --predicate \'subsystem == \"com.apple.AssetCache\"\' --debug --info --start \"$(date -v -1d \"+%Y-%m-%d\")\" --end \"$(date \"+%Y-%m-%d\")\" | grep \"Served all\""
-cacheoutput = subprocess.check_output(command, shell=True)
-rawLog = StringIO.StringIO(cacheoutput)
+    total = 0
+    localcache = 0
+    appledownload = 0
 
-total = 0
-localcache = 0
-appledownload = 0
+    for x in rawLog:
+        linesplit = str.split(x)
+        total = total + sizeConvert(linesplit[16][:-1], linesplit[15])
+        localcache = localcache + sizeConvert(linesplit[18],linesplit[17])
+        appledownload = appledownload + sizeConvert(linesplit[22],linesplit[21])
 
-for x in rawLog:
-    linesplit = str.split(x)
-    total = total + sizeConvert(linesplit[16][:-1], linesplit[15])
-    localcache = localcache + sizeConvert(linesplit[18],linesplit[17])
-    appledownload = appledownload + sizeConvert(linesplit[22],linesplit[21])
-    
-yesterday = date.today() - timedelta(1)
-yesterday.strftime('%Y-%m-%d')
+    yesterday = date.today() - timedelta(1)
+    yesterday.strftime('%Y-%m-%d')
 
-output = "%s, %.2f,%.2f,%.2f\n" % (yesterday, round(total,2), round(localcache,2), round(appledownload,2))
-outputfile.write(output)
-outputfile.close()
+    output = "%s, %.2f,%.2f,%.2f\n" % (yesterday, round(total,2), round(localcache,2), round(appledownload,2))
+    outputfile.write(output)

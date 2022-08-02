@@ -142,20 +142,20 @@ def main():
     parser.add_argument("rules", default=None, help="Set of rules to create feedback from", type=dir_path)
     parser.add_argument("-s", "--submit", default="No", help="Auto Submit feedback tickets")
     parser.add_argument("-a", "--applecare", default="none", help="Enter Applecare Enterprise email address")
-    
+
     try:
         results = parser.parse_args()
         print(results)
-        print("Yaml rules folder: " + results.rules)
-        print("Auto submit: " + results.submit)
-        print("Applecare email: " + results.applecare)
+        print(f"Yaml rules folder: {results.rules}")
+        print(f"Auto submit: {results.submit}")
+        print(f"Applecare email: {results.applecare}")
         print()
 
 
     except IOError as msg:
         parser.error(str(msg))
 
-    for rule in glob.glob(results.rules + '/*'):
+    for rule in glob.glob(f'{results.rules}/*'):
         if "srg" in rule or "supplemental" in rule:
             continue
         with open(rule) as r:
@@ -163,11 +163,11 @@ def main():
         if "inherent" in rule_yaml['tags'] or "n_a" in rule_yaml['tags'] or "permanent" in rule_yaml['tags']:
             continue
         if "manual" in rule_yaml['tags']:
-            
+
             continue
         if rule_yaml['mobileconfig']:
             continue
-        
+
         subject = rule_yaml['title'] + " Configuration Profile request"
         description = '''
 This is a compliance request that affects everyone that allows Macs in regulated industry such as government, healthcare, energy, banking. 
@@ -190,7 +190,7 @@ Thank you
 -- 
 
         '''.format(rule_yaml['discussion'].replace("_MUST_", "MUST"), rule_yaml['fix'], rule_yaml['check'], str(rule_yaml['references']['800-53r4']).replace("[","").replace("]",""))
-        
+
         print(rule_yaml['id'])
         applescripty(results.submit, results.applecare, subject,section,feedbackType,description,sysreport)
 
